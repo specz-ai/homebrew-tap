@@ -3,9 +3,9 @@ class Specz < Formula
 
   desc "OAuth-connected command-line client for Specz"
   homepage "https://specz.ai"
-  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.2.0/specz_cli-0.2.0.tar.gz"
-  sha256 "95e2175690c71fb841c4da7245f20909e166396e24d24dead518264d197ec2bf"
-  version "0.2.0"
+  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.3.0/specz_cli-0.3.0.tar.gz"
+  sha256 "cb8ce71913c06d7e8d118f5cb46951e9548c2ce33192dfbab8456ef1243b181d"
+  version "0.3.0"
   license "MIT"
 
   depends_on "python@3.13"

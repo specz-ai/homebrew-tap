@@ -367,6 +367,8 @@ class Specz < Formula
   end
 
   def install
+    # Resources are checksum-verified by Homebrew and installed from local paths.
+    ENV["PIP_USE_DEPRECATED"] = "legacy-certs"
     venv = virtualenv_create(libexec, "python3.13")
     venv.pip_install resources
     venv.pip_install_and_link buildpath, build_isolation: false

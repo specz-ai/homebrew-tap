@@ -369,11 +369,30 @@ class Specz < Formula
   def install
     # Resources are checksum-verified by Homebrew and installed from local paths.
     ENV["PIP_USE_DEPRECATED"] = "legacy-certs"
+    venv = virtualenv_create(libexec, "python3.13")
     if OS.mac?
       arch = Hardware::CPU.arm? ? "arm64" : "x86_64"
-      ENV["PIP_PLATFORM"] = "macosx_#{MacOS.version.major}_0_#{arch}"
+      python_compat = buildpath/"python-compat"
+      python_compat.mkpath
+      (python_compat/"sitecustomize.py").write <<~PYTHON
+        """Provide macOS platform metadata from Homebrew."""
+
+        import platform
+
+
+        def _homebrew_mac_ver(
+            _release: str = "",
+            _versioninfo: tuple[str, str, str] = ("", "", ""),
+            _machine: str = "",
+        ) -> tuple[str, tuple[str, str, str], str]:
+            """Return the macOS version and architecture detected by Homebrew."""
+            return ("#{MacOS.version.major}.0", ("", "", ""), "#{arch}")
+
+
+        platform.mac_ver = _homebrew_mac_ver
+      PYTHON
+      ENV.prepend_path "PYTHONPATH", python_compat
     end
-    venv = virtualenv_create(libexec, "python3.13")
     venv.pip_install resources
     venv.pip_install_and_link buildpath, build_isolation: false
   end

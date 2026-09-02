@@ -8,6 +8,12 @@ class Specz < Formula
   version "0.4.2"
   license "MIT"
 
+  bottle do
+    root_url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.4.2"
+    rebuild 1
+    sha256 cellar: :any, arm64_tahoe: "cc952858b9d9f22295127c8d4f7c191b6f81cf495e4eb29362de832d875781b2"
+  end
+
   depends_on "rust" => :build
   depends_on "python@3.13"
 

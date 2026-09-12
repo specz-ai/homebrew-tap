@@ -3,16 +3,10 @@ class Specz < Formula
 
   desc "OAuth-connected command-line client for Specz"
   homepage "https://specz.ai"
-  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.4.2/specz_cli-0.4.2.tar.gz"
-  sha256 "75ca2df191509f648846cc024f514b71d1fd5e1396124762a30b687b6493753b"
-  version "0.4.2"
+  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.5.0/specz_cli-0.5.0.tar.gz"
+  sha256 "d5016601790214c8e82eeb12aa4438cb4f11253bb9e81a331fe690a33bb8772c"
+  version "0.5.0"
   license "MIT"
-
-  bottle do
-    root_url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.4.2"
-    rebuild 1
-    sha256 cellar: :any, arm64_tahoe: "cc952858b9d9f22295127c8d4f7c191b6f81cf495e4eb29362de832d875781b2"
-  end
 
   depends_on "rust" => :build
   depends_on "python@3.13"
@@ -258,13 +252,13 @@ class Specz < Formula
   end
 
   resource "pydantic" do
-    url "https://files.pythonhosted.org/packages/18/a5/b60d21ac674192f8ab0ba4e9fd860690f9b4a6e51ca5df118733b487d8d6/pydantic-2.13.4.tar.gz"
-    sha256 "c40756b57adaa8b1efeeced5c196f3f3b7c435f90e84ea7f443901bec8099ef6"
+    url "https://files.pythonhosted.org/packages/53/ef/fc4f868f4e2cee79f863883abffceff107875f569b848507319842d2a681/pydantic-2.13.5.tar.gz"
+    sha256 "51a9c5f7b2f8e636f04c6cada605d9b6a3bf1348fdf945a3d8869b19bba0ee08"
   end
 
   resource "pydantic-core" do
-    url "https://files.pythonhosted.org/packages/9d/56/921726b776ace8d8f5db44c4ef961006580d91dc52b803c489fafd1aa249/pydantic_core-2.46.4.tar.gz"
-    sha256 "62f875393d7f270851f20523dd2e29f082bcc82292d66db2b64ea71f64b6e1c1"
+    url "https://files.pythonhosted.org/packages/af/f9/8a06bea35ef8daf588f707784c973a7046e0034c8d8cfb08828eeffb8b75/pydantic_core-2.46.5.tar.gz"
+    sha256 "10416c15b8839ecc4ef4d0885da76da6fd0f67333a0eb8aff6d93c4b8f2910fc"
   end
 
   resource "pydantic-settings" do
@@ -273,8 +267,8 @@ class Specz < Formula
   end
 
   resource "pygments" do
-    url "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz"
-    sha256 "6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f"
+    url "https://files.pythonhosted.org/packages/49/2e/ced460408999b33da6b31b0021b0f37d329e202d4169aeb164493778f25b/pygments-2.21.0.tar.gz"
+    sha256 "610ca751c9bc2492b38eb9a38a7fbc93edbbb2d7182edaf34e66ae493dee5c8c"
   end
 
   resource "pyjwt" do

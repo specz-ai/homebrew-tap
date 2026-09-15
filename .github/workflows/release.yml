@@ -1,0 +1,245 @@
+name: Build and publish Specz CLI
+
+on:
+  repository_dispatch:
+    types: [build-cli-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing CLI-only prerelease version (major.minor.patch)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: specz-cli-public-release
+  cancel-in-progress: false
+
+env:
+  TAP_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Test public release contracts
+        run: python3 -m unittest discover -s tests -v
+      - name: Validate candidate version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version || github.event.client_payload.version }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must use major.minor.patch" >&2
+            exit 1
+          fi
+          echo "value=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+      - name: Require an unpublished candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          gh release view "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --json isPrerelease,isDraft --jq '.isPrerelease and (.isDraft | not)' | grep -qx true
+
+  build-bottles:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
+    steps:
+      - name: Download candidate source and formula
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --pattern "specz_cli-$RELEASE_VERSION.tar.gz" --pattern specz.rb --dir candidate
+      - name: Build and test source installation
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "$EXPECTED_ARCHITECTURE"
+          brew tap "$TAP_REPOSITORY"
+          tap_dir="$(brew --repository "$TAP_REPOSITORY")"
+          cp candidate/specz.rb "$tap_dir/Formula/specz.rb"
+          brew trust --formula "$TAP_REPOSITORY/specz"
+          checksum="$(shasum -a 256 "candidate/specz_cli-$RELEASE_VERSION.tar.gz" | cut -d ' ' -f 1)"
+          brew info --json=v2 "$TAP_REPOSITORY/specz" \
+            | jq --exit-status --arg version "$RELEASE_VERSION" --arg checksum "$checksum" \
+                --arg url "https://github.com/$TAP_REPOSITORY/releases/download/v$RELEASE_VERSION/specz_cli-$RELEASE_VERSION.tar.gz" \
+                '.formulae[0] | .versions.stable == $version and .urls.stable.url == $url and .urls.stable.checksum == $checksum'
+          brew install --overwrite python@3.13
+          brew install --build-bottle "$TAP_REPOSITORY/specz"
+          brew test "$TAP_REPOSITORY/specz"
+          test "$(specz --version)" = "specz $RELEASE_VERSION"
+          brew bottle --json \
+            --root-url="https://github.com/$TAP_REPOSITORY/releases/download/v$RELEASE_VERSION" \
+            "$TAP_REPOSITORY/specz"
+      - name: Stage bottle release assets
+        run: |
+          set -euo pipefail
+          mkdir -p bottle-artifacts
+          for metadata in ./*.bottle.json; do
+            jq --exit-status --raw-output \
+              '.[] | .bottle.tags[] | [.local_filename, .filename, .sha256] | @tsv' \
+              "$metadata" | while IFS=$'\t' read -r source destination checksum; do
+                test -s "$source"
+                test "${destination##*/}" = "$destination"
+                printf '%s  %s\n' "$checksum" "$source" | shasum -a 256 --check -
+                cp "$source" "bottle-artifacts/$destination"
+              done
+            cp "$metadata" bottle-artifacts/
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: specz-bottle-${{ matrix.architecture }}
+          path: bottle-artifacts
+          if-no-files-found: error
+
+  publish-candidate-bottles:
+    needs: [prepare, build-bottles]
+    runs-on: macos-15
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: specz-bottle-*
+          path: bottle-artifacts
+          merge-multiple: true
+      - name: Download candidate formula
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --pattern specz.rb --dir candidate
+      - name: Merge bottle checksums
+        run: |
+          brew tap "$TAP_REPOSITORY"
+          tap_dir="$(brew --repository "$TAP_REPOSITORY")"
+          cp candidate/specz.rb "$tap_dir/Formula/specz.rb"
+          brew trust --formula "$TAP_REPOSITORY/specz"
+          cd "$tap_dir"
+          brew bottle --merge --write --no-commit "$GITHUB_WORKSPACE"/bottle-artifacts/*.bottle.json
+          cp Formula/specz.rb "$GITHUB_WORKSPACE/candidate/specz.rb"
+      - name: Upload candidate bottles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --json isPrerelease --jq .isPrerelease | grep -qx true
+          gh release upload "v$RELEASE_VERSION" bottle-artifacts/*.bottle*.tar.gz candidate/specz.rb \
+            --repo "$TAP_REPOSITORY" --clobber
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: candidate-formula
+          path: candidate/specz.rb
+          if-no-files-found: error
+
+  verify-bottles:
+    needs: [prepare, publish-candidate-bottles]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: candidate-formula
+          path: candidate
+      - name: Install the candidate bottle on a fresh runner
+        run: |
+          test "$(uname -m)" = "$EXPECTED_ARCHITECTURE"
+          brew tap "$TAP_REPOSITORY"
+          tap_dir="$(brew --repository "$TAP_REPOSITORY")"
+          cp candidate/specz.rb "$tap_dir/Formula/specz.rb"
+          brew trust --formula "$TAP_REPOSITORY/specz"
+          brew install --overwrite python@3.13
+          brew install --force-bottle "$TAP_REPOSITORY/specz"
+          brew test "$TAP_REPOSITORY/specz"
+          test "$(specz --version)" = "specz $RELEASE_VERSION"
+          brew info --json=v2 "$TAP_REPOSITORY/specz" \
+            | jq --exit-status --arg version "$RELEASE_VERSION" \
+                '.formulae[0].installed | any(.version == $version and .poured_from_bottle == true)'
+
+  promote:
+    needs: [prepare, verify-bottles]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: candidate-formula
+          path: candidate
+      - name: Promote the verified formula and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --json isPrerelease --jq .isPrerelease | grep -qx true
+          python3 - <<'PY'
+          """Reject a candidate with the wrong version or an older stable version."""
+          import os
+          import re
+          from pathlib import Path
+
+          expected = os.environ["RELEASE_VERSION"]
+          candidate = Path("candidate/specz.rb").read_text()
+          stable = Path("Formula/specz.rb").read_text()
+          candidate_version = re.search(r'^  version "([0-9.]+)"$', candidate, re.MULTILINE)
+          stable_version = re.search(r'^  version "([0-9.]+)"$', stable, re.MULTILINE)
+          if candidate_version is None or candidate_version[1] != expected:
+              raise SystemExit("Candidate version does not match the requested release")
+          if stable_version is None or tuple(map(int, expected.split("."))) < tuple(map(int, stable_version[1].split("."))):
+              raise SystemExit("Refusing to downgrade the stable formula")
+          PY
+          cp candidate/specz.rb Formula/specz.rb
+          git config user.name "specz-release-bot"
+          git config user.email "release-bot@specz.ai"
+          gh auth setup-git
+          git add Formula/specz.rb
+          if ! git diff --cached --quiet; then
+            git commit -m "specz $RELEASE_VERSION verified bottles"
+            git push origin HEAD:main
+          fi
+          gh release edit "v$RELEASE_VERSION" --repo "$TAP_REPOSITORY" \
+            --prerelease=false --latest --notes "Verified Specz CLI source and Homebrew bottles for Apple Silicon and Intel."

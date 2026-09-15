@@ -3,10 +3,16 @@ class Specz < Formula
 
   desc "OAuth-connected command-line client for Specz"
   homepage "https://specz.ai"
-  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.5.2/specz_cli-0.5.2.tar.gz"
-  sha256 "26becc6eb403ec6c888af6ffee93b0d9471137c68cbc73cb9ad125097b9ea178"
-  version "0.5.2"
+  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.5.3/specz_cli-0.5.3.tar.gz"
+  sha256 "f7f000f0e79bf5816135ac53f400228bd3b1511b8219fdb4dd7c417940aee7a2"
+  version "0.5.3"
   license "MIT"
+
+  bottle do
+    root_url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.5.3"
+    sha256 cellar: :any, arm64_sequoia: "559818d734a488c68bfece471ee63cf4557783b3edc6aae9ac218def6da2c1e2"
+    sha256 cellar: :any, sequoia:       "ef4ebd6f3b425fd5c027fa811c3b0b92de32096c5a088739e25e41b0639a967b"
+  end
 
   depends_on "rust" => :build
   depends_on "python@3.13"

@@ -3,15 +3,15 @@ class Specz < Formula
 
   desc "OAuth-connected command-line client for Specz"
   homepage "https://specz.ai"
-  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.6.0/specz_cli-0.6.0.tar.gz"
-  sha256 "cfdc05538fd66e809da8a155cb40eb2dede11785c240f57e3080a31cf10116d3"
-  version "0.6.0"
+  url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.8.0/specz_cli-0.8.0.tar.gz"
+  sha256 "e6fd7d86a5051aac763d061e365e4070ac3d9928daee3be43240b37b8bddfb2c"
+  version "0.8.0"
   license "MIT"
 
   bottle do
-    root_url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.6.0"
-    sha256 cellar: :any, arm64_sequoia: "a86c0a6f07af68bd88c20e56e8f0624a28e06e98e5f75b9ce21541001e92d178"
-    sha256 cellar: :any, sequoia:       "77baedc1bdf73f07f637bd38ff3c39859823660dc79ff9886f584591ed09d488"
+    root_url "https://github.com/specz-ai/homebrew-tap/releases/download/v0.8.0"
+    sha256 cellar: :any, arm64_sequoia: "489315fc2bc22e105ed76a9353af51ae07feb66be6744b371493defb5bec0092"
+    sha256 cellar: :any, sequoia:       "1cc14e4a6a6dffefb51ee544fa8073737ea0596651edbd14e186b5aae78097b5"
   end
 
   depends_on "rust" => :build
@@ -123,8 +123,8 @@ class Specz < Formula
   end
 
   resource "hatchling" do
-    url "https://files.pythonhosted.org/packages/69/08/33331757185504aae48b8d9bd78cec03a76e3aecfb52e549d05a2347c0dd/hatchling-1.32.0.tar.gz"
-    sha256 "0bdbde4a52b06c37e3eca395f85a762bf0ef06fe374fd8ae429dc6be10230f5f"
+    url "https://files.pythonhosted.org/packages/62/7f/b20bd29978bec1f2ddd3bbc1cdc5829bb2dd5c1476facd8a84bfe9934c5e/hatchling-1.32.3.tar.gz"
+    sha256 "acdd4436d84d829c6e7ae6df723241d8f0bca9c5bad5a6148bd41f2ea6b8a792"
   end
 
   resource "httpcore" do
@@ -143,8 +143,8 @@ class Specz < Formula
   end
 
   resource "idna" do
-    url "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz"
-    sha256 "ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc"
+    url "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz"
+    sha256 "a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44"
   end
 
   resource "jaraco-classes" do
@@ -278,8 +278,8 @@ class Specz < Formula
   end
 
   resource "pyjwt" do
-    url "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz"
-    sha256 "41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423"
+    url "https://files.pythonhosted.org/packages/af/c3/8a3b59c25070cc61dc517fbdfa5dc0904670c96f605cc69759dc09166b99/pyjwt-2.14.0.tar.gz"
+    sha256 "77283c83fb56ecf566a886c757a714bc83668e38156de2cce8263302f42e0b86"
   end
 
   resource "pyperclip" do
@@ -358,8 +358,8 @@ class Specz < Formula
   end
 
   resource "uvicorn" do
-    url "https://files.pythonhosted.org/packages/f2/0f/3f86e61397dd33bf2ccf28188c40db6a740658aeebbbf6e7dbc101a1f487/uvicorn-0.52.4.tar.gz"
-    sha256 "73acfee47a0b133c5de13d219492d62d8a31e935f4fe6e41a232451a15379f86"
+    url "https://files.pythonhosted.org/packages/5d/ad/04bbb797c84fc1f26cb171f7394716f4865ffb8d8c5e1eef42565c2dfa6b/uvicorn-0.53.0.tar.gz"
+    sha256 "a9356f0cb89b3b8621529c5d5eebd69bfe154f4c3f68b4cf2de47e45fa855c2e"
   end
 
   resource "watchfiles" do
